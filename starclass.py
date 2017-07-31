@@ -5,7 +5,7 @@ import astropy.units as u
 
 from spt_magnitude_conversion import split_spt
 import fit_blackbody
-from fit_blackbody import fit_temp2flux, flux2mag, mag2flux
+from fit_blackbody import fit_flux2temp, flux2mag, mag2flux
 
 
 class Star():
@@ -64,11 +64,13 @@ class Star():
         print('Getting the temperature of {} using wavebands {}\n\
 This may take some time.'.format(
                 self.name, self._filterband))
-        return fit_temp2flux(self.flux(), self._filterband,
+        temparea = fit_flux2temp(self.flux(), self._filterband,
                              nusepoints=nusepoints)
+        print('Found temperature and offset are: {}'.format(temparea))
+        return temparea
 
-    def temp2mag_from_filter(self, filterband, nusepoints=15, temperature=None,
-                             skyarea = None):
+    def temp2mag_from_filter(self, filterband, temperature=None,
+                             skyarea=None, nusepoints=15):
         '''Get The magnitude in a filterband fitting a BB using the found
         temp and skyarea. Or give a temp and skyarea'''
         if temperature is None:

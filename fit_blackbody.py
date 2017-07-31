@@ -13,7 +13,7 @@ _pnfilt = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                        'VOSA_filtercurves')  # pn for filters
 
 
-def fit_temp2flux(fluxes, filtnames, nusepoints=15):
+def fit_flux2temp(fluxes, filtnames, nusepoints=15):
     '''Give lists for fluxes, fluxerrs and filtnames for the points
     you want to fit a blackbody to. It returns the temperature in K'''
     # first get the integrated fluxes of the magnitude bands
@@ -36,11 +36,20 @@ def fit_temp2flux(fluxes, filtnames, nusepoints=15):
                                        usepoints))
     fluxints = fluxints * fluxints[0].unit
     fluxerrs = fluxerrs * fluxerrs[0].unit
-    fitres = least_squares(residuals, [2000, 1e-17],
-                           args=[[fluxints, fluxerrs, filtnames,
-                                  nusepoints]],
-# use bounds for method trm # bounds=[[0, 1e-40], [20000, 1e-5]],
-                           method='lm')
+    temparea_init = np.array([1000., 1e-17])
+    value_changed = False
+    while not value_changed:
+        fitres = least_squares(residuals, temparea_init,
+                               args=[[fluxints, fluxerrs, filtnames,
+                                      nusepoints]],
+        # use bounds for method trm # bounds=[[0, 1e-40], [20000, 1e-5]],
+                               method='lm')
+        if np.any(fitres.x == temparea_init):
+            print('Fit not worked. Changing initial values')
+            temparea_init *= 1.1
+        else:
+            value_changed = True
+
     fittemparea = fitres.x
     return fittemparea
 
@@ -102,6 +111,8 @@ def get_filter(filtname):
 
 
 def bb_w_filter(wavel, Temp, tfilt):
+    if Temp < 0:
+        Temp = 0. * u.K
     flux = bbl(wavel * u.Angstrom, Temp) *\
            tfilt['transmis'][find_nearest(tfilt['lambda'],
                                           wavel)]
@@ -156,7 +167,6 @@ def flux2mag(flux, filtname, nusepoints=15):
             find_nearest(tfilt['lambda'],
                          usepoints[ipoint])]
         zerofluxint = integrate_flux(zeroflux * new_throughput,
-                                 usepoints)
-
-    mag = u.Magnitude(-2.5 * np.log10(flux/zerofluxint))
+                                     usepoints)
+    mag = u.Magnitude((-2.5 * np.log10(flux/zerofluxint)).value)
     return mag
