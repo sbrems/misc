@@ -71,7 +71,7 @@ def residuals(Temparea, fluxfilts):
     return resid
 
 
-def filtered_flux(Temp, filtname, nusepoints=15):
+def filtered_flux(Temp, filtname, nusepoints=50):
     '''Return the integrated flux of the filter mutliplied with the
     transmission.'''
     tfilt = get_filter(filtname)
@@ -142,6 +142,7 @@ def loadfiltzeros(filtname):
         zeroflux = zeroflux * u.erg / u.cm**2 / u.s / u.Angstrom
         filterzeros[filtname] = zeroflux
         pickle.dump(filterzeros, open(pfnfilt, 'wb'))
+
     return zeroflux
 
 
