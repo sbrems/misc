@@ -20,7 +20,7 @@ class Star():
     coord_units: default: ['u.hourangle','u.deg'],
     default coord_frame ='icrs'
     Magnitudes (with the filterband, default filterband = None)
-    SpT (also num)
+    SpT (also num), get_SpT tries to get it from Simbad
     aliases
     Magnitude bands
     storing and getting pm from simbad (='auto')
@@ -63,7 +63,11 @@ class Star():
     def SpC_num(self):
         return split_spt(self.SpT)[2]
 
-    def read_spectrum(self, fpath, wlunit=u.nm,
+    def get_spT(self):
+        Simbad().add_votable_fields('sptype')
+        self.SpT = Simbad().query_object(self.name)['SP_TYPE'][0]
+
+        def read_spectrum(self, fpath, wlunit=u.nm,
                       fluxunit=u.erg/u.cm**2/u.s/u.Angstrom):
         data = fits.getdata(fpath)
         print('Assuming dataformat lambda,flux,error with wl-unit \
