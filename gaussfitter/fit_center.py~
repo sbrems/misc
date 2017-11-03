@@ -1,0 +1,9 @@
+import numpy as np
+from gaussfitter.gaussfitter import gaussfit
+
+
+def fit_center(imcube, fitpoint, fitmode='circular', fwhm=7.):
+    '''Find the center around fitpoint. If fitmode circular
+    use last point as guess for new one. '''
+    fitradius = fwhm
+    for image in imcube:
