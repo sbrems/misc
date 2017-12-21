@@ -67,7 +67,7 @@ class Star():
         Simbad().add_votable_fields('sptype')
         self.SpT = Simbad().query_object(self.name)['SP_TYPE'][0]
 
-        def read_spectrum(self, fpath, wlunit=u.nm,
+    def read_spectrum(self, fpath, wlunit=u.nm,
                       fluxunit=u.erg/u.cm**2/u.s/u.Angstrom):
         data = fits.getdata(fpath)
         print('Assuming dataformat lambda,flux,error with wl-unit \
