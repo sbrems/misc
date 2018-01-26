@@ -15,7 +15,7 @@ from bin_spectra import filter_flux, get_spectrum, fold_with_gauss
 
 class Star():
     '''Save properties of a star. So far available:
-    aliases (auto from Simbad)
+    aliases ('auto' from Simbad)
     Coordinates (=['auto',] for Simbad query),
     coord_units: default: ['u.hourangle','u.deg'],
     default coord_frame ='icrs'
@@ -57,7 +57,6 @@ class Star():
         return "Starcass object  named {}".format(self.name)
 
     def SpT_num(self):
-        print('Blubb')
         return np.sum(split_spt(self.SpT)[0:2])
 
     def SpC_num(self):
@@ -98,7 +97,7 @@ class Star():
         if tspectrum is None:
             tspectrum = copy.copy(self.spectrum)
         return fold_with_gauss(delta_lambda, tspectrum)
-    
+
     def integrate_spectrum(self, tspectrum=None, minusepoints=50):
         '''function requires a table with 3 columns: wavelength, flux, fluxerr.
         If you do not pass it to tspectrum, the algorithm will take the one from
@@ -150,7 +149,7 @@ class Star():
     def get_temp_via_bb(self, nusepoints=15):
         '''Fit a bb to the filtercurves transmission given
         in slef.mag nusepoints gives the number of points used
-        in the filtercurves. The second value gives the scaling of 
+        in the filtercurves. The second value gives the scaling of
         the flux, e.g. sth similar to the steradian.'''
         print('Getting the temperature of {} using wavebands {}\n\
 This may take some time.'.format(
