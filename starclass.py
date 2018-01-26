@@ -182,7 +182,7 @@ This may take some time.'.format(
 
     @coordinates.setter
     def coordinates(self, coords):
-        if 'auto' in coords.lower():
+        if 'auto' in coords:
             coords = Simbad.query_object(self.sname)['RA', 'DEC']
             coords = [coords['RA'][0] + ' ' + coords['DEC'][0], ]
             self._coordinates = SkyCoord(coords, unit=(u.hourangle, u.deg),
@@ -195,14 +195,14 @@ them in a tuple with \
 first: ra,dec, second coord_units, third: coord_frame. Two and three are optional.\
 E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
             crds = coords[0]
-            coord_units = self._coord_units
-            coord_frame = self._coord_frame
+            coord_units = self._coordinates[1]
+            coord_frame = self._coordinates[2]
             if len(coords) >= 2:
                 coord_units = coords[1]
             elif len(coords) == 3:
                 coord_frame = coords[2]
 
-            self._coordinates = SkyCoord(coords, unit=coord_units,
+            self._coordinates = SkyCoord(crds[0], crds[1], unit=coord_units,
                                          frame=coord_frame)
 
     @property
