@@ -62,9 +62,9 @@ class Star():
     def SpC_num(self):
         return split_spt(self.SpT)[2]
 
-    def get_spT(self):
-        Simbad().add_votable_fields('sptype')
-        self.SpT = Simbad().query_object(self.name)['SP_TYPE'][0]
+    def get_SpT(self):
+        Simbad.add_votable_fields('sptype')
+        self.SpT = (Simbad.query_object(self.sname)['SP_TYPE'][0]).decode('utf-8')
 
     def read_spectrum(self, fpath, wlunit=u.nm,
                       fluxunit=u.erg/u.cm**2/u.s/u.Angstrom):

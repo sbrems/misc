@@ -98,13 +98,15 @@ def bmv2spt_I(bmv):
     spc = num2spc[rounddown10(spt_num)]
     subc= roundhalf(np.float(spt_num-rounddown10(spt_num)))
     
-    return spc,subc
+    return spc, subc
 
 def manual_split(spt):
     '''Look at a list with manually entered sptypes'''
     spt = spt.strip()
     dir_path = os.path.dirname(os.path.realpath(__file__))      
-    man_converter = pickle.load(open(dir_path+"manual_conversions.p","rb"))
+    man_converter = pickle.load(open(os.path.join(dir_path,
+                                                  "manual_conversions.p"),
+                                                  "rb"))
     try:
         res = man_converter[spt]
         print('Already known exception. Converter {} to {}'.format(spt,res))
@@ -133,20 +135,20 @@ def split_spt(spt,enter_manually=True):
     spt = spt.upper()
     repl_cars = [" ","C","E","(",")","/"]
     for car in repl_cars:
-        spt= str(spt.replace(car,""))
-    split1 = [x for x in re.split('([OBAFGKMLTY])',spt.strip()) if x] #split first letter
+        spt = str(spt.replace(car, ""))
+    split1 = [x for x in re.split('([OBAFGKMLTY])', spt.strip()) if x]  # split first letter
     if len(split1) == 1:
         res = [spc2num[split1[0]],5.,np.nan]
     elif len(split1) == 2:
-        split2 = [x for x in re.split('([0-9]+\.?[0-9]?)',split1[1]) if x]
-        if len(split2) ==2:
-            res = [spc2num[split1[0]],np.float(split2[0]),lumc2num[split2[1]]]
+        split2 = [x for x in re.split('([0-9]+\.?[0-9]?)', split1[1]) if x]
+        if len(split2) == 2:
+            res = [spc2num[split1[0]], np.float(split2[0]), lumc2num[split2[1]]]
         elif len(split2) == 1:
             try:
-                res = [spc2num[split1[0]],5.,lumc2num[split2[0]]]
+                res = [spc2num[split1[0]], 5., lumc2num[split2[0]]]
             except:
                 try:
-                    res = [spc2num[split1[0]],np.float(split2[0]),np.nan]
+                    res = [spc2num[split1[0]], np.float(split2[0]), np.nan]
                 except:
                     res = manual_split(spt)
         else:
