@@ -154,13 +154,14 @@ def fold_with_gauss(delta_lambda, tspectrum):
         binwidth = (tspectrum['wavelength'][halfnbins] -
                     tspectrum['wavelength'][halfnbins-1]) \
                     * tspectrum['wavelength'].unit
-
+    # divide by binwidth to convert to pixel units and by 2.355 to convert
+    # from FWHM to sigma
     tspectrum['flux'] = gaussian_filter1d(tspectrum['flux'],
-                                          delta_lambda / binwidth,
+                                          delta_lambda / binwidth / 2.355,
                                           mode='reflect') * \
                                           tspectrum['flux'].unit
     tspectrum['fluxerr'] = gaussian_filter1d(tspectrum['fluxerr'],
-                                             delta_lambda / binwidth,
+                                             delta_lambda / binwidth / 2.355,
                                              mode='reflect') * \
                                              tspectrum['fluxerr'].unit
     return tspectrum
