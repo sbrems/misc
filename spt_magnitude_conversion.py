@@ -36,12 +36,12 @@ def spt2vmag_ms(spc,subc):
     else:
         num_value = spc_num+5.#use center of SpT given
     #now give the values for the main sequence V-magnitudes based on numerical Spectral type
-    
+
     lumv= [-5.7,-4.5,-4.0,-2.45,-1.2,-0.25,#O,B
            0.65,1.3,1.95,2.7,3.6,3.5,4.0,#A,F
            4.4,4.7,5.1,5.5,5.9,6.4,7.35,#G,K
            8.8,9.9,12.3]#M
-    
+
     vmag = np.interp(num_value,spt_allen_ms,lumv,left=np.nan,right=np.nan)
     if (not np.isfinite(vmag)) and (spc.upper() != 'NAN'):
         print('Warning!Interpolation only between O5 and M5. You gave', spc,subc)
@@ -100,38 +100,40 @@ def bmv2spt_I(bmv):
     
     return spc, subc
 
+
 def manual_split(spt, spt_orig):
     '''Look at a list with manually entered sptypes'''
     spt = spt.strip()
-    dir_path = os.path.dirname(os.path.realpath(__file__))      
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     man_converter = pickle.load(open(os.path.join(dir_path,
                                                   "manual_conversions.p"),
                                                   "rb"))
     try:
         res = man_converter[spt]
-        print('Already known exception. Converter {} to {}'.format(spt,res))
+        print('Already known exception. Converted {} to {}'.format(spt, res))
     except:
         print('Unknown spt '+spt+'. Please enter the value manually')
         while True:
             try:
-                res = eval(input('Enter in the form "[10,5.,3]" for O5III. use np.nan for invalid values for {}\n'.format(spt)))
+                res = eval(input('Enter in the form "[10,5.,3]" for O5III. use [np.nan, np.nan, np.nan] for invalid values for {}\n'.format(spt)))
                 if len(res) != 3:
                     raise ValueError('Sorry, that didnt seem a right input')
                 else:
-                    print('New entry: {} : {}'.format(spt,res))
+                    print('New entry: {} : {}'.format(spt, res))
+                    break
             except ValueError:
                 print('Try again')
                 continue
         man_converter[spt] = res
-        pickle.dump(man_converter,open(dir_path+"manual_conversions.p","wb"))
+        pickle.dump(man_converter, open(os.path.join(dir_path, "manual_conversions.p"), "wb"))
     return res
 
-def split_spt(spt,enter_manually=True):
+def split_spt(spt, enter_manually=True):
     '''Converting type O3IV to [10,3,4] or [10,5,nan] if only O
     O is given (5 picked as center)'''
     spt_orig = spt
     spt = spt.upper()
-    repl_cars = [" ","C","E","(",")","/"]
+    repl_cars = [" ","C","E","(",")","/",":"]
     for car in repl_cars:
         spt = str(spt.replace(car, ""))
     split1 = [x for x in re.split('([OBAFGKMLTY])', spt.strip()) if x]  # split first letter
@@ -140,7 +142,10 @@ def split_spt(spt,enter_manually=True):
     elif len(split1) == 2:
         split2 = [x for x in re.split('([0-9]+\.?[0-9]?)', split1[1]) if x]
         if len(split2) == 2:
-            res = [spc2num[split1[0]], np.float(split2[0]), lumc2num[split2[1]]]
+            try:
+                res = [spc2num[split1[0]], np.float(split2[0]), lumc2num[split2[1]]]
+            except KeyError:
+                res = manual_split(spt, spt_orig)
         elif len(split2) == 1:
             try:
                 res = [spc2num[split1[0]], 5., lumc2num[split2[0]]]
@@ -148,18 +153,17 @@ def split_spt(spt,enter_manually=True):
                 try:
                     res = [spc2num[split1[0]], np.float(split2[0]), np.nan]
                 except:
-                    res = manual_split(spt)
+                    res = manual_split(spt, spt_orig)
         else:
-      
             if enter_manually:
-                res = manual_split(spt)
+                res = manual_split(spt, spt_orig)
             else:
                 res = [np.nan]*3
-                raise ValueError('Error.Cannot convert spectral type: %s'%spt_orig)
+                raise ValueError('Error.Cannot convert spectral type: {}'.format(spt_orig))
     else:
         if enter_manually:
-            res = manual_split(spt)
+            res = manual_split(spt, spt_orig)
         else:
             res = [np.nan]*3
-            raise ValueError('Error.Cannot convert spectral type: %s'%spt_orig) 
+            raise ValueError('Error.Cannot convert spectral type: {}'.format(spt_orig))
     return res
