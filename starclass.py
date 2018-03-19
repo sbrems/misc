@@ -31,7 +31,7 @@ class Star():
 
     def __init__(self, sname,
                  coordinates=[None, [u.hourangle, u.deg], 'icrs'],
-                 aliases=None,
+                 aliases=None, simbad_main_ID=None,
                  mag=None, filterband=None, magerror=None,
                  SpT=None, SpC=None, temperature=None,
                  mass=None, comp_sep=None, parallax=None,
@@ -47,6 +47,7 @@ class Star():
 
         self._pm = pm
         self._aliases = aliases
+        self._simbad_main_ID = simbad_main_ID
         self._coordinates = coordinates
         self._mag = mag
         self._filterband = filterband
@@ -262,3 +263,10 @@ E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
         if self._aliases is None:
             self._aliases = list(Simbad.query_objectids(self.sname)['ID'])
         return self._aliases
+
+    @property
+    def simbad_main_ID(self):
+        if self._simbad_main_ID is None:
+            self._simbad_main_ID = Simbad.query_object(
+                self.sname)['MAIN_ID'][0].decode('utf-8')
+        return self._simbad_main_ID
