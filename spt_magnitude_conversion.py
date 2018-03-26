@@ -125,7 +125,9 @@ def manual_split(spt, spt_orig):
                 print('Try again')
                 continue
         man_converter[spt] = res
-        pickle.dump(man_converter, open(os.path.join(dir_path, "manual_conversions.p"), "wb"))
+        pickle.dump(man_converter, open(os.path.join(dir_path,
+                                                     "manual_conversions.p"),
+                                        "wb"))
     return res
 
 def split_spt(spt, enter_manually=True):

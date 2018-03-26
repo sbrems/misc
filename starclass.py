@@ -27,6 +27,7 @@ class Star():
     Temperature detemination via a BB fit to these bands
     parallax and conversion to distance
     get_filtered_spectrum (set spectrum first)
+    simbad_main_ID returns the Simbad main ID. Usefull to see if stars are aliases
     '''
 
     def __init__(self, sname,
