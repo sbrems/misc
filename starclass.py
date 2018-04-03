@@ -212,11 +212,15 @@ E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
 
     @pm.setter
     def pm(self, pm):
-        if 'auto' in pm.lower():
-            Simbad.add_votable_fields('pmra', 'pmdec')
-            pm = Simbad.query_object(self.sname)['PMRA', 'PMDEC']
-            pm = [pm['PMRA'].to('mas/yr')[0].value,
-                  pm['PMDEC'].to('mas/yr')[0].value] * u.mas / u.yr
+        if isinstance(pm, str):
+            if 'auto' in pm.lower():
+                Simbad.add_votable_fields('pmra', 'pmdec')
+                pm = Simbad.query_object(self.sname)['PMRA', 'PMDEC']
+                pm = [pm['PMRA'].to('mas/yr')[0].value,
+                      pm['PMDEC'].to('mas/yr')[0].value] * u.mas / u.yr
+            else:
+                raise ValueError('Did not understand your input "{}" for pm. \
+Set it to "auto" to query Simbad or e.g. "[1., 2.,] *u.mas"')
         else:
             # make sure it is a list
             if len(pm) != 2:
