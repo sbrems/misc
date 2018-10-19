@@ -252,8 +252,8 @@ them in a tuple with \
 first: ra,dec, second coord_units, third: coord_frame. Two and three are optional.\
 E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
             crds = coords[0]
-            coord_units = self._coordinates[1]
-            coord_frame = self._coordinates[2]
+            coord_units = [u.deg, u.deg]
+            coord_frame = 'icrs'
             if len(coords) >= 2:
                 coord_units = coords[1]
             elif len(coords) == 3:
