@@ -100,7 +100,8 @@ def integrate_flux(fluxdenses, xpoints):
 
 
 def get_filter(filtname):
-    '''Reads and returns Astropy table with the filter transmission'''
+    '''Reads and returns Astropy table with the filter transmission.
+    Best is to use VOSA tables'''
     pfnfilt = os.path.join(_pnfilt,
                            filtname.replace('/','_') + '.dat')
 
@@ -111,6 +112,7 @@ def get_filter(filtname):
 
 
 def bb_w_filter(wavel, Temp, tfilt):
+    '''Filtered blackbody curve'''
     if Temp < 0:
         Temp = 0. * u.K
     flux = bbl(wavel * u.Angstrom, Temp) *\

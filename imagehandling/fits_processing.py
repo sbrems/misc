@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.io import fits
+from warnings import warn
 import os
 
 cam2head = {'red': 1, 'blue': 2}  # for nici data
@@ -55,7 +56,8 @@ def read_fits(directory, verbose=True, only_first=False, cam=None,
                 data = hdulist[cam2head[cam]].data
             else:
                 if len(hdulist) != 1:
-                    raise ValueError('Unknown file format at file %s' % fl)
+                    warn('Unknown file format at file {}. Hdulist has len {}. \
+Expected 1, using index 0.'.format(fl, len(hdulist)))
                 header = hdulist[0].header
                 data = hdulist[0].data
             # check data shape
@@ -75,3 +77,26 @@ def read_fits(directory, verbose=True, only_first=False, cam=None,
                 raise ValueError('Fits file has unknown format!')
 
     return filenames, all_data, headers
+
+
+def filter_header(datacube, headercube, headervalue, headerkeyword='FILTER',
+                  return_indices=False, keep_old=False):
+    '''Returns the data and header cubes where the headerkeyword fits the headervalue. Leaves the old cubes untouched.
+    Set return indices =True to get the valid indices.
+    keep_old:
+    keep the old headercube. Otherwise deleted for space saving'''
+    valididx = []
+    newheadcube = []
+    for ihead, head in enumerate(headercube):
+        if head[headerkeyword] == headervalue:
+            valididx.append(ihead)
+            newheadcube.append(head)
+    if not keep_old:
+        del headercube
+    if valididx == []:
+        warn('There were no frames found for value {} in headerkey {}'.format(
+            headervalue, headerkeyword))
+    if return_indices:
+        return datacube[valididx,:,:], newheadcube, valididx
+    else:
+        return datacube[valididx,:,:], newheadcube
