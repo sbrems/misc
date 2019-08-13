@@ -10,7 +10,8 @@ def find_centers(cube, fitpoint,
     as guess for the next one'''
     cutrad = int(fwhm)  # half size of the frame
     if len(cube.shape) != 3:
-        raise ValueError('Invalid data cube shape {}'.format(cube.shape))
+        raise ValueError('Invalid data cube shape {}. Should be 3dim'.format(
+            cube.shape))
 
     centers = np.full((cube.shape[0], 2), np.nan)
     sigmas = np.full((cube.shape[0]), np.nan)

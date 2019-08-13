@@ -141,7 +141,10 @@ def split_spt(spt, enter_manually=True):
         spt = str(spt.replace(car, ""))
     split1 = [x for x in re.split('([OBAFGKMLTY])', spt.strip()) if x]  # split first letter
     if len(split1) == 1:
-        res = [spc2num[split1[0]],5.,np.nan]
+        try:
+            res = [spc2num[split1[0]],5.,np.nan]
+        except KeyError:
+            res = manual_split(spt, spt_orig)
     elif len(split1) == 2:
         split2 = [x for x in re.split('([0-9]+\.?[0-9]?)', split1[1]) if x]
         if len(split2) == 2:
@@ -152,10 +155,10 @@ def split_spt(spt, enter_manually=True):
         elif len(split2) == 1:
             try:
                 res = [spc2num[split1[0]], 5., lumc2num[split2[0]]]
-            except:
+            except KeyError:
                 try:
                     res = [spc2num[split1[0]], np.float(split2[0]), np.nan]
-                except:
+                except KeyError:
                     res = manual_split(spt_orig)
         else:
             if enter_manually:

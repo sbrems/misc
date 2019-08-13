@@ -5,6 +5,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.table import Table
 from astropy.io import fits
+from scipy import integrate
 
 from celestial_mechanics.proper_motion import calprowrapper
 from spt_magnitude_conversion import split_spt
@@ -21,35 +22,34 @@ class Star():
     default coord_frame ='icrs'
     Magnitudes (with the filterband, default filterband = None)
     SpT (also num), get_SpT tries to get it from Simbad
-    aliases
     Magnitude bands
     storing and getting pm from simbad (='auto')
     Temperature detemination via a BB fit to these bands
-    parallax and conversion to distance
+    parallax and conversion to distance (withough errors, as mostly you want parallaxerr)
     get_filtered_spectrum (set spectrum first)
     simbad_main_ID returns the Simbad main ID. Usefull to see if stars are aliases
     '''
-
+    @u.quantity_input(temperature=u.K, parallax=u.mas,
+                      pm=u.mas/u.yr,  mass='mass',)
     def __init__(self, sname,
-                 coordinates=[None, [u.hourangle, u.deg], 'icrs'],
                  aliases=None, simbad_main_ID=None,
                  mag=None, filterband=None, magerror=None,
                  SpT=None, SpC=None, temperature=None,
-                 mass=None, comp_sep=None, parallax=None,
-                 pm=None):
+                 mass=None, parallax=None,
+                 pm=None, distance=None):
         self.sname = sname
         self.SpT = SpT
         self.temperature = temperature
         self.skyarea = None  # the result when fitting a temperature
         self.mass = mass
-        self.comp_sep = comp_sep
-        self.parallax = parallax
         self.spectrum = None
 
+        self._parallax = parallax
         self._pm = pm
+        self._distance = distance
         self._aliases = aliases
+        self._coordinates = None
         self._simbad_main_ID = simbad_main_ID
-        self._coordinates = coordinates
         self._mag = mag
         self._filterband = filterband
         self._magerror = magerror
@@ -136,17 +136,11 @@ class Star():
         return fluxes, fluxerrs
 
     def model_pm(self, tstart, tend):
-        tpm = calprowrapper(self.sname, self.distance(),
+        tpm = calprowrapper(self.sname, self.distance,
                             self.coordinates.ra, self.coordinates.dec,
                             self.pm[0], self.pm[1],
                             tstart, tend)
         return tpm
-
-    def distance(self):
-        if self.parallax is None:
-            print('Please set the parallax to get the distance')
-        else:
-            return (self.parallax).to(u.pc, equivalencies=u.parallax())
 
     def get_temp_via_bb(self, nusepoints=15):
         '''Fit a bb to the filtercurves transmission given
@@ -160,6 +154,27 @@ This may take some time.'.format(
                                  nusepoints=nusepoints)
         print('Found temperature and offset are: {}'.format(temparea))
         return temparea
+
+    @u.quantity_input(stellar_radius=u.Rsun)
+    def get_absolute_magnitude(self, filterband, stellar_radius):
+        '''Return the absolute magnitud for the filterband given.
+        self.spectrum must be defined before. This function is made
+        to work with BT-settl models'''
+        intflux = self.integrate_spectrum(
+            self.get_filteredspectrum(filterband))[0] / \
+            self.calculate_equivalent_width(filterband)
+        mag = -2.5 * np.log10(intflux/self.show_filterzeros()[filterband])
+        MAG = mag - 5 * np.log10(stellar_radius/u.pc) + 5
+        return MAG
+
+    def calculate_equivalent_width(self, filterband):
+        tfilter = self.get_filter(filterband)
+        return integrate.trapz(tfilter['transmis'],
+                               tfilter['lambda']) * tfilter['lambda'].unit
+
+    def get_filter(self, filterband):
+        '''Return the filtercuve, if the file exists'''
+        return fit_blackbody.get_filter(filterband)
 
     def temp2mag_from_filter(self, filterband, temperature=None,
                              skyarea=None, nusepoints=15):
@@ -178,16 +193,57 @@ This may take some time.'.format(
         return fit_blackbody.loadfiltzeros('all')
 
     @property
+    def parallax(self):
+        if self._parallax is None:
+            print('Parallax is None. To get it from Simbad, \
+set parallax = "auto"')
+        return self._parallax
+
+    @parallax.setter
+    def parallax(self, parallax):
+        if isinstance(parallax, str):
+            if parallax.lower() == 'auto':
+                Simbad.add_votable_fields('parallax')
+                plxplxerr = Simbad.query_object(self.sname)['PLX_VALUE',
+                                                            'PLX_ERROR']
+                self._parallax = plxplxerr['PLX_VALUE'].to('mas')[0]
+                self.parallaxerr = plxplxerr['PLX_ERROR'].to('mas')[0]
+                Simbad.reset_votable_fields()
+        else:
+            self._parallax = parallax.to('mas')
+
+    @property
+    def distance(self):
+        if self._distance is None:
+            if self._parallax is None:
+                print('Give parallax or distance first, \
+e.g. by setting parallax="auto"')
+            else:
+                self._distance = (self.parallax).to(u.pc,
+                                                    equivalencies=u.parallax())
+        return self._distance
+
+    @distance.setter
+    @u.quantity_input(dist=u.pc)
+    def distance(self, dist):
+        self._distance = dist
+
+    @property
     def coordinates(self):
         return self._coordinates
 
     @coordinates.setter
     def coordinates(self, coords):
-        if 'auto' in coords:
-            coords = Simbad.query_object(self.sname)['RA', 'DEC']
-            coords = [coords['RA'][0] + ' ' + coords['DEC'][0], ]
-            self._coordinates = SkyCoord(coords, unit=(u.hourangle, u.deg),
-                                         frame='icrs')
+        if isinstance(coords, str):
+            if 'auto' in coords:
+                coords = Simbad.query_object(self.sname)['RA', 'DEC']
+                coords = [coords['RA'][0] + ' ' + coords['DEC'][0], ]
+                self._coordinates = SkyCoord(coords, unit=(u.hourangle, u.deg),
+                                             frame='icrs')
+        elif coords is None:
+            self._coordinates = None
+        elif isinstance(coords, SkyCoord):
+            self._coordinates = coords
         else:
             # make sure it is a list
             if len(coords) not in [1, 2, 3]:
@@ -196,8 +252,8 @@ them in a tuple with \
 first: ra,dec, second coord_units, third: coord_frame. Two and three are optional.\
 E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
             crds = coords[0]
-            coord_units = self._coordinates[1]
-            coord_frame = self._coordinates[2]
+            coord_units = [u.deg, u.deg]
+            coord_frame = 'icrs'
             if len(coords) >= 2:
                 coord_units = coords[1]
             elif len(coords) == 3:
@@ -218,15 +274,16 @@ E.g. [["2:00:00 -1:00:00"],[u.hourangle, u.deg],"icrs"]')
                 pm = Simbad.query_object(self.sname)['PMRA', 'PMDEC']
                 pm = [pm['PMRA'].to('mas/yr')[0].value,
                       pm['PMDEC'].to('mas/yr')[0].value] * u.mas / u.yr
+                Simbad.reset_votable_fields()
             else:
                 raise ValueError('Did not understand your input "{}" for pm. \
 Set it to "auto" to query Simbad or e.g. "[1., 2.,] *u.mas"')
         else:
             # make sure it is a list
             if len(pm) != 2:
-                raise ValueError('Dont understand pm format. please give 2 values')
+                raise ValueError('Dont understand pm format. Please give 2 values')
             try:
-                pm = pm * pm[0].unit
+                pm.unit
             except:
                 print('No unit specified. Assuming mas/yr')
                 pm = pm * u.mas / u.yr
