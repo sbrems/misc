@@ -101,7 +101,7 @@ def bmv2spt_I(bmv):
     return spc, subc
 
 
-def manual_split(spt, spt_orig):
+def manual_split(spt):
     '''Look at a list with manually entered sptypes'''
     spt = spt.strip()
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -134,8 +134,9 @@ def split_spt(spt, enter_manually=True):
     '''Converting type O3IV to [10,3,4] or [10,5,nan] if only O
     O is given (5 picked as center)'''
     spt_orig = spt
-    spt = spt.upper()
-    repl_cars = [" ","C","E","(",")","/",":"]
+    # remove small characters since simbad only uses small ones
+    spt = ''.join([x for x in spt if not spt.islower()])
+    repl_cars = [" ","C","E","(",")","/",":","*","CN","_"]
     for car in repl_cars:
         spt = str(spt.replace(car, ""))
     split1 = [x for x in re.split('([OBAFGKMLTY])', spt.strip()) if x]  # split first letter
@@ -147,7 +148,7 @@ def split_spt(spt, enter_manually=True):
             try:
                 res = [spc2num[split1[0]], np.float(split2[0]), lumc2num[split2[1]]]
             except KeyError:
-                res = manual_split(spt, spt_orig)
+                res = manual_split(spt_orig)
         elif len(split2) == 1:
             try:
                 res = [spc2num[split1[0]], 5., lumc2num[split2[0]]]
@@ -155,16 +156,16 @@ def split_spt(spt, enter_manually=True):
                 try:
                     res = [spc2num[split1[0]], np.float(split2[0]), np.nan]
                 except:
-                    res = manual_split(spt, spt_orig)
+                    res = manual_split(spt_orig)
         else:
             if enter_manually:
-                res = manual_split(spt, spt_orig)
+                res = manual_split(spt_orig)
             else:
                 res = [np.nan]*3
                 raise ValueError('Error.Cannot convert spectral type: {}'.format(spt_orig))
     else:
         if enter_manually:
-            res = manual_split(spt, spt_orig)
+            res = manual_split(spt_orig)
         else:
             res = [np.nan]*3
             raise ValueError('Error.Cannot convert spectral type: {}'.format(spt_orig))
