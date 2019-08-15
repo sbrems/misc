@@ -69,6 +69,29 @@ def f_test(chi1, chi2, ndata, par1, par2, alpha=0.02, verbose=True):
     return better_model
 
 
+def kde_smallest_interval(array, kernel="gau", area=68.27):
+    '''Calculate the lower and upper limits of the array in such a way,
+    area (default=68.27) of the values are in a as small as possible spread.
+    For small arrays we need the kde.
+    Returns the min and max bounds'''
+    array = np.array(array)
+    assert len(array.shape) == 1, "The array needs to be 1D to \
+estimate the errors!"
+    dens = kde.KDEUnivariate(array)
+    dens.fit()
+    icdf = dens.icdf
+
+    npoints = icdf.shape[0]
+    # make sure kde samples dense enough
+    assert npoints >= 100
+
+    # find the minimum interval now
+    spread = np.int(np.round(npoints*(area/100.)))
+    optimumidx = np.argmin(icdf[spread:] - icdf[:-spread])
+    # return min/max bounds
+    return icdf[optimumidx], icdf[optimumidx+spread]
+
+
 def kde_confidence_intervals(array, kernel="gau"):
     '''Calculate the lower and upper limits of the array
     smoothing it first with a gaussian (default) kernel.
@@ -88,12 +111,20 @@ def kde_confidence_intervals(array, kernel="gau"):
     returns
     lowerlim, upperlim of the 68 percile
     '''
+    array = np.array(array)
     assert len(array.shape) == 1
     dens = kde.KDEUnivariate(array)
     dens.fit()
     low = np.percentile(dens.icdf, 15.865)
     up = np.percentile(dens.icdf, 84.135)
     return low, up
+
+
+def confid_intervals_given_mean(mean, array, pecentiles=[15.865, 84.135]):
+    '''Give a mean/best guess and the array of values. Returns
+    the percentiles values. If there is not enough datapoints left, nan is
+    returned'''
+    
 
 
 class Gamma():

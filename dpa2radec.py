@@ -27,7 +27,7 @@ def inverse(ra, dra, dec, ddec, verbose=False):
     d = np.sqrt(ra**2 + dec**2)
     dpa = np.sqrt(np.square(ra / d**2 * ddec) +
                   np.square(dec / d**2 * dra))
-    dd = dra + ddec
+    dd = np.sqrt((dra*np.abs(np.cos(pa)))**2 + (ddec*np.abs(np.sin(pa)))**2)
     if verbose:
         print('Orientation: 0 is up, positive PA to east (pos ra)')
         print('Out:\n Dist: {}+-{} mas/px, PA: {}+-{} deg'.format(

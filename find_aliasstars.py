@@ -11,7 +11,7 @@ _pnmanualmainids = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "knownmainids.p")
 
 
-def get_mainids(stars, verbose=True, sleeptime=0.2, manual_edit=True):
+def get_mainids(stars, verbose=True, sleeptime=0.5, manual_edit=True):
     '''Return al list with the Simbad_mainid for each of the stars.
     Sleep is needed as Simbad blocks otherwise. In seconds.'''
     mainlist = []
@@ -50,11 +50,11 @@ Using empty string instead.'.format(star))
     return mainlist
 
 
-def get_aliasindices(stars, verbose=True):
+def get_aliasindices(stars, verbose=True, sleeptime=0.5):
     '''Return a dictionary with aliases indices. If the dict is empty,
     no aliases were found. Emptystring is where the aliasing failed,
     e.g. because Simbad couldnt resolve the star name.'''
-    mainstars = get_mainids(stars, verbose=verbose)
+    mainstars = get_mainids(stars, verbose=verbose, sleeptime=sleeptime)
     dduplicates = list_duplicates(mainstars)
     if verbose:
         print('Found aliases:')

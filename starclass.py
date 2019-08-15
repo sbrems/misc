@@ -6,6 +6,7 @@ import astropy.units as u
 from astropy.table import Table
 from astropy.io import fits
 from scipy import integrate
+import time
 
 from celestial_mechanics.proper_motion import calprowrapper
 from spt_magnitude_conversion import split_spt
@@ -329,6 +330,13 @@ Set it to "auto" to query Simbad or e.g. "[1., 2.,] *u.mas"')
     @property
     def simbad_main_ID(self):
         if self._simbad_main_ID is None:
-            self._simbad_main_ID = Simbad.query_object(
-                self.sname)['MAIN_ID'][0].decode('utf-8')
+            try:
+                self._simbad_main_ID = Simbad.query_object(
+                    self.sname)['MAIN_ID'][0].decode('utf-8')
+            except ConnectionError:
+                print('Timeouterror. This usually happens if you send many queries \
+and SIMBAD blocks the connection for some time. Trying again in 20seconds')
+                time.sleep(20.)
+                self._simbad_main_ID = Simbad.query_object(
+                    self.sname)['MAIN_ID'][0].decode('utf-8')
         return self._simbad_main_ID

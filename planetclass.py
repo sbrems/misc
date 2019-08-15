@@ -70,12 +70,13 @@ Stored in a table. Valid entry would be
     @u.quantity_input(pxscale=u.mas, coordinats=u.mas)
     def overpaint_proper_motion(self, image, imdate, refdate, coordinates,
                                 xyimstar=None, pxscale=27.02*u.mas,
-                                plot_startail=True, pnsave=None):
+                                plot_startail=True, pnsave=None,
+                                plotlimits=[-1, 2.5]):
         overpaint_image.overpaint(self, image, imdate, refdate,
                                   coordinates, xyimstar=xyimstar,
                                   pxscale=pxscale,
                                   plot_startrail=plot_startail,
-                                  pnsave=pnsave)
+                                  pnsave=pnsave, plotlimits=plotlimits)
 
     def model_proper_motion(self, labels=None, irefdate=0):
         '''Return the appearent positions of the source given in cPositions.

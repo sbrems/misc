@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from astropy.io import fits
 import matplotlib.pyplot as plt
 import astropy.units as u
 from .proper_motion import calprowrapper
@@ -8,7 +7,8 @@ from .proper_motion import calprowrapper
 
 @u.quantity_input(pxscale=u.mas, coordinates=u.mas)
 def overpaint(planet, image, imdate, refdate, coordinates, xyimstar=None,
-              pxscale=27.02*u.mas, plot_startrail=True, pnsave=None):
+              pxscale=27.02*u.mas, plot_startrail=True, pnsave=None,
+              plotlimits=None):
     '''Overpaint the position of (multiple) companions.
     Draw the original position and the new calculated one.
     planet:
@@ -29,7 +29,10 @@ def overpaint(planet, image, imdate, refdate, coordinates, xyimstar=None,
     the pixelscale of the image. An astropy quantity. Assuming image
     is in standard orientation (e.g. east left, north up)
     plot_startrail=True
-    plot the movement of the star in the meantime'''
+    plot the movement of the star in the meantime
+    plotlimits=[-1, 2.5]
+    set to [limlow, limup] to cut the image colors.
+    Default is [-1, 2.5]'''
     print('Assuming north up, east left. Pixelscale is {}'.format(pxscale))
     ttimes = calprowrapper(planet.cname, planet.distance,
                            planet.coordinates.ra, planet.coordinates.dec,
@@ -39,7 +42,7 @@ def overpaint(planet, image, imdate, refdate, coordinates, xyimstar=None,
     if xyimstar is None:
         xyimstar = np.rint(np.array(image.shape[-2:])/2.)
     xyimstar = np.array(xyimstar)
-    plt.imshow(image, origin='lower', vmin=-1., vmax=2.5)
+    plt.imshow(image, origin='lower', vmin=plotlimits[0], vmax=plotlimits[1])
     # plot the starposition
     plt.scatter(xyimstar[0], xyimstar[1], marker='*', c='k')
     # get the movement of the star

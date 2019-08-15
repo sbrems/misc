@@ -1,6 +1,5 @@
-platescale/
-imorbel/
-twinkle/
-__pycache__/
-VIP/
-twinkledir/
+*.pyc
+__pychache__
+pynpoint
+twinkledir
+imorbel
