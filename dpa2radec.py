@@ -9,10 +9,8 @@ def do(d, dd, pa, dpa, verbose=False):
     dpa = dpa * np.pi / 180.
     ra = d * np.sin(pa)
     dec = d * np.cos(pa)
-    ddec = np.abs(ra * np.sqrt((dd / d)**2 + (
-        (np.cos(pa + dpa) - np.cos(pa)) / (np.cos(pa)))**2))
-    dra = np.abs(dec * np.sqrt((dd / d)**2 + (
-        (np.sin(pa + dpa) - np.sin(pa)) / (np.sin(pa)))**2))
+    ddec = np.sqrt((d*np.sin(pa) * dpa)**2 + (np.cos(pa)*dd)**2)
+    dra  = np.sqrt((d*np.cos(pa) * dpa)**2 + (np.sin(pa)*dd)**2)
     if verbose:
         print('Out:\n RA:%s +- %s mas, DEC: %s +- %s mas' % (
             ra, dra, dec, ddec))

@@ -5,8 +5,10 @@ import astropy.units as u
 # from astropy.time import Time
 from astropy.table import Table
 import dpa2radec
+from astropy.coordinates import SkyCoord
 from celestial_mechanics.model_orbit import make_orbit, calc_point
 from celestial_mechanics import overpaint_image
+from celestial_mechanics.proper_motion import pm_plot
 
 
 class Planet(Star):
@@ -68,17 +70,19 @@ Stored in a table. Valid entry would be
                           t0=self.ct0)
 
     @u.quantity_input(pxscale=u.mas, coordinats=u.mas)
-    def overpaint_proper_motion(self, image, imdate, refdate, coordinates,
-                                xyimstar=None, pxscale=27.02*u.mas,
+    def overpaint_proper_motion(self, image,
+                                irefdate=0,
+                                xyimstar='center', pxscale=27.02*u.mas,
                                 plot_startail=True, pnsave=None,
                                 plotlimits=[-1, 2.5]):
-        overpaint_image.overpaint(self, image, imdate, refdate,
-                                  coordinates, xyimstar=xyimstar,
+        overpaint_image.overpaint(self, image,
+                                  irefdate=irefdate,
+                                  xyimstar=xyimstar,
                                   pxscale=pxscale,
                                   plot_startrail=plot_startail,
                                   pnsave=pnsave, plotlimits=plotlimits)
 
-    def model_proper_motion(self, labels=None, irefdate=0):
+    def model_and_plot_pm(self, labels=None, irefdate=0):
         '''Return the appearent positions of the source given in cPositions.
         Set cPositions and proper motion (of the star) before.
         labels = [str,]

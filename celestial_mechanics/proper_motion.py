@@ -1,12 +1,14 @@
 # a wrapper for the lisp pm-script calpro.pl from yamamoto
 import os
 import matplotlib.pyplot as plt
+from matplotlib import rc
 # import numpy as np
 import astropy.units as u
 from astropy.table import Table
 from astropy.time import Time
 from subprocess import call
 from shutil import copyfile
+import seaborn as sns
 
 
 def calprowrapper(sname, dist, RA, DEC, pmRA, pmDEC,
@@ -89,7 +91,12 @@ def pm_plot(planetname, distance, starcoords, pm, tpositions,
     decref = tpositions['DEC'].to('mas')[irefdate]
     # cmap = plt.get_cmap('jet')
     # colors = iter(cmap(np.linspace(0, 1, len(dates))))
+
     # plot the line of pm
+    sns.set_style('darkgrid')
+    rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    rc('text', usetex=True)
+
     plt.plot((-ttimes['deltaRA'].to('mas')-raoff+raref).to('mas').value,
              (-ttimes['deltaDEC'].to('mas')-decoff+decref).to('mas').value,
              color='k')
@@ -97,8 +104,10 @@ def pm_plot(planetname, distance, starcoords, pm, tpositions,
         # color = next(colors)
         idx = _closest_in_list(ttimes['JD'].jd, tpositions['date'].jd[idate])
         # the measured positions
-        plt.errorbar(tpositions['RA'].to('mas')[idate].value,
-                     tpositions['DEC'].to('mas')[idate].value,
+        xmeas = tpositions['RA'].to('mas')[idate].value
+        ymeas = tpositions['DEC'].to('mas')[idate].value
+        plt.errorbar(xmeas,
+                     ymeas,
                      xerr=tpositions['RAerr'].to('mas')[idate].value,
                      yerr=tpositions['DECerr'].to('mas')[idate].value,
                      marker='x',
@@ -107,18 +116,31 @@ def pm_plot(planetname, distance, starcoords, pm, tpositions,
                      zorder=2)
         # the calculated positions
         if idate != irefdate:
+            xcalc = (-ttimes['deltaRA'].to('mas')[idx]-raoff+raref).to('mas').value
+            ycalc = (-ttimes['deltaDEC'].to('mas')[idx]-decoff+decref).to("mas").value
             plt.scatter(
-                (-ttimes['deltaRA'].to('mas')[idx]-raoff+raref).to('mas').value,
-                (-ttimes['deltaDEC'].to('mas')[idx]-decoff+decref).to("mas").value,
+                xcalc,
+                ycalc,
                 marker='o', s=15,
                 color='C{}'.format(idate),
                 zorder=2.5)
+            # also plot connecting lines
+            plt.plot([xmeas, xcalc],
+                     [ymeas, ycalc],
+                     ls=':', color='C{}'.format(idate))
     plt.ylabel('DEC [mas]')
     plt.xlabel('RA [mas]')
     plt.title('{} proper motion analysis ({} pc)'.format(
         planetname, round(distance.to('pc').value)))
+    plt.gca().invert_xaxis()
+    plt.gca().set_aspect('equal')
     plt.legend()
-    plt.savefig(os.path.join(os.getcwd(), 'pm_{}.pdf'.format(planetname)))
+    pnsave = os.path.join(os.getcwd(), 'pm_{}.pdf'.format(planetname))
+    print('Saving PM plot to {}'.format(pnsave))
+    plt.tight_layout()
+    plt.savefig(pnsave,
+                bbox_inches='tight',
+                pad_inches=0)
     plt.close()
     return ttimes
 

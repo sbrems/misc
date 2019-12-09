@@ -2,7 +2,7 @@ import numpy as np
 from astropy.stats import sigma_clip
 from tqdm import tqdm
 from scipy.stats import linregress
-from .fits_processing import read_fits, filter_header
+from fits_processing import read_fits, filter_header
 
 
 def sort_darks(darkdir, hexpt, filterheaderkey=None, filterheadervalue=None,

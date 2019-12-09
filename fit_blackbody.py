@@ -90,22 +90,37 @@ def filtered_flux(Temp, filtname, nusepoints=50):
     return flux
 
 
-def integrate_flux(fluxdenses, xpoints):
+def integrate_flux(fluxdenses, xpoints, fluxerr=None):
     '''Integrate the flux of a source. If there is only one value given,
     assume a constant fluxdensity.'''
     flux = integrate.trapz(fluxdenses,
                            x=xpoints)
-
-    return flux
+    if fluxerr is None:
+        return flux
+    else:
+        dx = np.diff(xpoints)
+        dx = (np.hstack((0, dx)) + np.hstack((dx, 0)))/2.
+        fluxsig = np.sqrt(np.sum((dx*fluxerr)**2))
+        return flux, fluxsig
 
 
 def get_filter(filtname):
     '''Reads and returns Astropy table with the filter transmission.
     Best is to use VOSA tables'''
-    pfnfilt = os.path.join(_pnfilt,
-                           filtname.replace('/','_') + '.dat')
+    # create artificial filter
+    if filtname.startswith('stepfunc_'):
+        lammin = float(filtname.split('_')[1])
+        lammax = float(filtname.split('_')[2])
 
-    tfilt = Table(np.loadtxt(pfnfilt), names=['lambda', 'transmis'])
+        tfilt = Table([[lammin, 1e-16*lammin + lammin,
+                       lammax-1e-16*lammax, lammax],
+                      [0, 1, 1, 0]],
+                      names=['lambda', 'transmis'],)
+    else:
+        pfnfilt = os.path.join(_pnfilt,
+                               filtname.replace('/', '_') + '.dat')
+
+        tfilt = Table(np.loadtxt(pfnfilt), names=['lambda', 'transmis'])
     tfilt['lambda'].unit = u.Angstrom
 
     return tfilt
