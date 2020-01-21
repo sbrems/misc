@@ -13,7 +13,7 @@ def filter_flux(tspectrum, filtname, minusepoints=50, invert=False):
     # replace invalid errors (nan, inf,..) by the maximum found value
     if np.sum(~np.isfinite(tspectrum['fluxerr'])) > 0:
         if np.sum(~np.isfinite(tspectrum['fluxerr'])) == len(tspectrum):
-            print('Only invalid errors found. Assuming they are 0')
+            print('Only invalid flux error values found. Assuming they are 0')
             tspectrum['fluxerr'] = 0.0
         else:
             print('Invalid values in error found. Replacing them by the maximum')
@@ -43,10 +43,11 @@ def filter_flux(tspectrum, filtname, minusepoints=50, invert=False):
         ffilt_flux = np.vectorize(lambda wavell: fflux(wavell) * ffilt(wavell))
         ffilt_fluxerr = np.vectorize(lambda wavell: ffluxerr(wavell) *
                                      ffilt(wavell))
+
     tspectrum['flux'] = ffilt_flux(usepoints.to('Angstrom').value) * \
-                        u.erg/(u.cm**2*u.s*u.Angstrom)
+        u.erg/(u.cm**2*u.s*u.Angstrom)
     tspectrum['fluxerr'] = ffilt_fluxerr(usepoints.to('Angstrom').value) * \
-                           u.erg/(u.cm**2*u.s*u.Angstrom)
+        u.erg/(u.cm**2*u.s*u.Angstrom)
 
     return tspectrum
 
@@ -119,9 +120,11 @@ def binary_filter(val, low, up):
     else:
         return 0
 
-def fold_with_gauss(delta_lambda, tspectrum):
+
+def fold_with_gauss(delta_lambda, tspectrum, binsize=None):
     '''function requires a table with 3 columns: wavelength, flux, fluxerr and a
-    delta_lambda which is the sigma of the gaussian it is folded with'''
+    delta_lambda which is the sigma of the gaussian it is folded with.
+    INT Bininput bins the data, e.g. if the spectrum is very high resolution.'''
     delta_lambda = delta_lambda.to(tspectrum['wavelength'].unit)
     # test if linearization is needed. Doing this by comparing first and last
     # stepsize
@@ -154,19 +157,36 @@ def fold_with_gauss(delta_lambda, tspectrum):
         binwidth = (tspectrum['wavelength'][halfnbins] -
                     tspectrum['wavelength'][halfnbins-1]) \
                     * tspectrum['wavelength'].unit
+    if binsize is not None:
+        print('Binning table by {} bins'.format(binsize))
+        binwidth *= binsize
+        nbins = np.int(np.floor(len(tspectrum) / binsize))
+        newdata = []
+        colnames = tspectrum.colnames
+        for col in colnames:
+            newdata.append(np.mean(np.reshape(
+                np.array(tspectrum[col][:nbins*binsize]),
+                (nbins, binsize)),
+                                   axis=1))
+        tspectrum_binned = Table(newdata, names=colnames)
+        for col in colnames:
+            tspectrum_binned[col].unit = tspectrum[col].unit
+        tspectrum = tspectrum_binned
+        del tspectrum_binned
+
     # divide by binwidth to convert to pixel units and by 2.355 to convert
     # from FWHM to sigma
     tspectrum['flux'] = gaussian_filter1d(tspectrum['flux'],
                                           delta_lambda / binwidth / 2.355,
                                           mode='reflect') * \
                                           tspectrum['flux'].unit
-    tspectrum['fluxerr'] = gaussian_filter1d(tspectrum['fluxerr'],
-                                             delta_lambda / binwidth / 2.355,
-                                             mode='reflect') * \
-                                             tspectrum['fluxerr'].unit
+#    tspectrum['fluxerr'] = gaussian_filter1d(tspectrum['fluxerr'],
+#                                             delta_lambda / binwidth / 2.355,
+#                                             mode='reflect') * \
+#                                             tspectrum['fluxerr'].unit
     return tspectrum
-    
-    
+
+
 def rebin_spec(wavelength, flux, waveout, keepneg=False):
     spec = spectrum.ArraySourceSpectrum(wave=wavelength, flux=flux,
                                         keepneg=keepneg)

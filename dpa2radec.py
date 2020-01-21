@@ -21,13 +21,15 @@ def inverse(ra, dra, dec, ddec, verbose=False):
     if verbose:
         print('Input:\n Ra: {}+-{} mas/px, Dec: {}+-{} mas/px'.format(
             ra, dra, dec, ddec))
-    pa = np.arctan2(ra, dec) * 180 / np.pi % 360
+    pa = np.arctan2(ra, dec)
     d = np.sqrt(ra**2 + dec**2)
     dpa = np.sqrt(np.square(ra / d**2 * ddec) +
-                  np.square(dec / d**2 * dra))
-    dd = np.sqrt((dra*np.abs(np.cos(pa)))**2 + (ddec*np.abs(np.sin(pa)))**2)
+                  np.square(dec / d**2 * dra)) * 180/np.pi
+    dd = np.sqrt((dra*np.abs(np.sin(pa)))**2 + (ddec*np.abs(np.cos(pa)))**2)
+    pa = pa * 180/np.pi % 360
     if verbose:
         print('Orientation: 0 is up, positive PA to east (pos ra)')
         print('Out:\n Dist: {}+-{} mas/px, PA: {}+-{} deg'.format(
             d, dd, pa, dpa))
+
     return d, dd, pa, dpa

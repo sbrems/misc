@@ -52,6 +52,7 @@ class Star():
                  SpC=None,
                  temperature=None,
                  mass=None,
+                 radius=None,
                  parallax=None,
                  pm=None,
                  distance=None):
@@ -60,7 +61,9 @@ class Star():
         self.temperature = temperature
         self.skyarea = None  # the result when fitting a temperature
         self.mass = mass
+        self.radius = radius
         self.spectrum = None
+
 
         self._parallax = parallax
         self._pm = pm
@@ -90,11 +93,17 @@ class Star():
 
     @u.quantity_input(radius=u.cm)
     def read_phoenix_highres(self, filename,
-                             radius=1*u.solRad, wlfilename=None):
+                             distance=None,
+                             radius=None, wlfilename=None):
         '''Read the highres Phoenix spectrum. Scale flux to the stellar
         Radius.'''
+        if radius is None:
+            radius = self.radius
+        if distance is None:
+            distance = self.distance
         return read_files.read_phoenix_highres(filename,
                                                radius=radius,
+                                               distance=distance,
                                                wlfilename=wlfilename)
 
     def get_activity_indicators(self, shiftToVacuum=True):
@@ -279,14 +288,14 @@ Check file {} is correct!'.format(fpath))
             tspectrum = self.spectrum.copy()
         return integrate_with_error(tspectrum, bounds)
 
-    def smooth_spectrum(self, delta_lambda, tspectrum=None):
+    def smooth_spectrum(self, delta_lambda, tspectrum=None, binsize=None):
         '''Smooth the spectrum  folding with a gaussian
         assuming a constant delta_lambda (not resolution).
         If no table with a spectrum is given, self.spectrum is used.
         Tests the spectrum. If not linear, it is going to linearize it'''
         if tspectrum is None:
             tspectrum = copy.copy(self.spectrum)
-        return fold_with_gauss(delta_lambda, tspectrum)
+        return fold_with_gauss(delta_lambda, tspectrum, binsize=binsize)
 
     def integrate_spectrum(self, tspectrum=None, minusepoints=50):
         '''function requires a table with 3 columns: wavelength, flux, fluxerr.
